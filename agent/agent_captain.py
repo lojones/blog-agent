@@ -9,7 +9,7 @@ from utils.logger import setup_logger
 from flask import send_file
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 import io
-from agent.tool_perplexity import PerplexityTool
+from agent.tool_perplexity import PerplexityTool, ResearchResponse
 from agent.tool_authorpersonality import PersonalityTool
 from typing import Dict
 from typing_extensions import TypedDict
@@ -21,9 +21,10 @@ class BlogAgentState(TypedDict):
     past_messages: list[str]
     initial_topic: str
     blog_outline: str
+    revised_outline: str
     author_personality_notes: str
     blog_post: str
-    background_research: str
+    background_research: ResearchResponse
     sources: list[str]
     images: Dict[str, bytes]
     
@@ -59,6 +60,7 @@ class AgentCaptain:
     
     def initial_outline(self, state: BlogAgentState):
         initial_topic = state["initial_topic"]
+        self.logger.info(f"Creating initial outline for topic: {initial_topic}")
         messages = []
         sysmsg = "You are a helpful assistant that creates blog posts.  \
             You look at the topic provided and create an initial outline for the blog post, understanding \
@@ -86,35 +88,21 @@ class AgentCaptain:
     def research_background(self, state: BlogAgentState):
         initial_topic = state["initial_topic"]
         blog_outline = state["blog_outline"]
+        self.logger.info(f"Researching background for topic: {initial_topic}")
         perplexity_response = self.perplexity.query(initial_topic, blog_outline)
-        state["background_research"] = perplexity_response["content"]
+        state["background_research"] = perplexity_response
+        self.logger.info(f"Updated background research: {state['background_research']}")
         return state
 
     def author_personality(self, state: BlogAgentState):
         blog_outline = state["blog_outline"]
         initial_topic = state["initial_topic"]
-        background_research = state["background_research"]
-        author_personality = self.personality.personalize(initial_topic, blog_outline, background_research)
+        background_research: ResearchResponse = state["background_research"]
+        self.logger.info(f"Analyzing author personality for topic: {initial_topic}")
+        background_research_content = background_research["content"]
+        author_personality = self.personality.personalize(initial_topic, blog_outline, background_research_content)
         state["author_personality_notes"] = author_personality
         return state
-
-    # def call_llm(self, state: MessagesState):
-    #     return {"messages": [self.llm_with_tools.invoke(state["messages"])]}
-    
-    def create_blogpost_outline(self, state: MessagesState):
-        return {"messages": [self.llm_with_tools.invoke(state["messages"])]}
-        
-    # def call_perplexity(self, topic: str, outline: str) -> Dict:
-    #     """Wrapper for the Perplexity tool's query function"""
-    #     try:
-    #         self.logger.info(f"Calling Perplexity with topic: {topic}")
-    #         return self.perplexity.query(topic)
-    #     except Exception as e:
-    #         self.logger.error(f"Perplexity call failed: {str(e)}")
-    #         raise
-
-    def get_personality_prompt(self, outline: str):
-        return self.personality.analyze_outline(outline)
     
     def showgraph(self):
         try:
@@ -132,9 +120,14 @@ class AgentCaptain:
     def create_blogpost(self, topic: str):
         try:
             # Wrap messages in a dictionary
-
-            input_data = { "messages":[HumanMessage(content=f"Create a blog post about {topic}")]}
+            input_data: BlogAgentState = {
+                "initial_topic": topic,
+                "blog_outline": "",
+                "background_research": "",
+                "author_personality_notes": {}
+            }
             
+            self.logger.info(f"Start Graph with Input data: {input_data}")
             # Pass the dictionary to the graph
             response = self.graph.invoke(input_data)
             

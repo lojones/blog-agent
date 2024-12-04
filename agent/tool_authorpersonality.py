@@ -23,7 +23,7 @@ class PersonalityTool:
         self.logger.info(f"Initialized with personality profile: {self.personality[:50]}...")
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
 
-    def personalize(self, initial_topic: str,blog_outline: str,  background_research: str) -> Dict:
+    def personalize(self, initial_topic: str,blog_outline: str,  background_research: str) -> str:
         """
         Analyzes blog content and generates relevant author personality traits to incorporate.
         
@@ -44,7 +44,7 @@ class PersonalityTool:
             background_research (str): Additional research and context gathered
             
         Returns:
-            dict: A prompt package containing:
+            Str: A prompt package containing the following sections with titles:
                 - prompt: Tailored prompt text describing relevant author details
                 - style_guide: Writing style recommendations
                 - key_experiences: List of specific experiences to reference
@@ -66,7 +66,8 @@ class PersonalityTool:
                 Blog topic: {initial_topic}\nBlog Outline: {blog_outline}\nBackground research: {background_research}"
             sysprompt =f"You are an expert in author personality traits and will be given the topic, outline, and background research \
                 of a blog post and asked to determine the most relevant author personality traits.  \
-                You ALWAYS return the result as a json object that contains the following keys: \
+                You ALWAYS return the result as a json object that contains the following keys, Ensure \
+                    the output is a valid JSON string without any extra text or formatting, not markdown just plain json: \
                 - prompt: Tailored prompt text describing relevant author details, this should be very detailed and also optimally consumable by an LLM \
                 - style_guide: Writing style recommendations \
                 - key_experiences: List of specific experiences to reference \
@@ -77,26 +78,10 @@ class PersonalityTool:
             self.logger.info(f"Response received, checking for validity: {response}")
 
             if isinstance(response, AIMessage):
-                try:
-                    # Convert the response content to a dictionary
-                    import json
-                    result = json.loads(response.content)
-                    self.logger.info(f"Response: {response}")
-                    
-                    # Validate required keys are present
-                    required_keys = ['prompt', 'style_guide', 'key_experiences', 'credentials']
-                    if not all(key in result for key in required_keys):
-                        raise ValueError("Response missing required keys")
-                        
-                    return result
-                except json.JSONDecodeError as e:
-                    self.logger.error(f"Failed to parse response as JSON: {str(e)}")
-                    raise
+                return response.content
             else:
                 self.logger.error(f"Unexpected response type: {type(response)}")
                 raise ValueError("LLM returned unexpected response type")
-            
-            
                 
         except Exception as e:
             self.logger.error(f"Failed to analyze outline: {str(e)}")
