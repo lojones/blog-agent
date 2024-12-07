@@ -2,6 +2,7 @@ from typing import Dict
 from utils.logger import setup_logger
 import os
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
@@ -21,7 +22,10 @@ class PersonalityTool:
             self.logger.error("PERSONALITY environment variable not set")
             raise ValueError("PERSONALITY environment variable must be set")
         self.logger.info(f"Initialized with personality profile: {self.personality[:50]}...")
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
+        # self.llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
+        self.llm_anthropic = ChatAnthropic(model="claude-3-5-sonnet-20240620", 
+                                    temperature=0.7,
+                                    max_tokens=8000)
 
     def personalize(self, initial_topic: str,blog_outline: str,  background_research: str) -> str:
         """
@@ -74,10 +78,12 @@ class PersonalityTool:
                 - credentials: Relevant credentials to establish authority \
                 This is the authors personality info: {self.personality}"
             messages = [HumanMessage(content=prompt), SystemMessage(content=sysprompt)]
-            response = self.llm.invoke(messages)
-            self.logger.info(f"Response received, checking for validity: {response}")
+            response = self.llm_anthropic.invoke(messages)
+            self.logger.info(f"Response received, checking for validity")
 
             if isinstance(response, AIMessage):
+                self.logger.info("Got personality response from LLM")
+                self.logger.debug(f"Response OK: {response.content}")
                 return response.content
             else:
                 self.logger.error(f"Unexpected response type: {type(response)}")

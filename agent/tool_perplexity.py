@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, List, TypedDict
+from typing import Dict, List
+from typing_extensions import TypedDict
 from utils.logger import setup_logger
 from langchain_community.chat_models import ChatPerplexity
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
@@ -15,6 +16,7 @@ class PerplexityTool:
     
     def __init__(self):
         self.logger = logger
+        self.logger.info("Initializing PerplexityTool")
         self.pplx_chat = ChatPerplexity()
     
     def query(self, initial_topic: str, blog_outline: str) -> Dict:
@@ -48,8 +50,8 @@ class PerplexityTool:
         """
         try:
             self.logger.info(f"Querying Perplexity AI for topic: {initial_topic}")
-            human_prompt = f"I want to write a blog post and need to research the following topic, \
-                so tell me all about this topic given the outline I've provided \
+            human_prompt = f"I want to research the following topic, \
+                so tell me all about this topic given the outline I've provided, provide as much detail as you can, be thorough. \
                 Topic: {initial_topic}\n\n\
                 Outline: {blog_outline}"
             messages = [HumanMessage(content=human_prompt)]
@@ -57,10 +59,12 @@ class PerplexityTool:
             pplx_response = ResearchResponse()
 
             if isinstance(response, AIMessage):
+                self.logger.info("Got research response from Perplexity")
                 research_content = response.content
                 citations = response.additional_kwargs['citations']
                 pplx_response["content"] = research_content
                 pplx_response["sources"] = citations
+                self.logger.debug(f"Perplexity response: {pplx_response}")
                 return pplx_response
             else:
                 self.logger.error("Received unexpected response type from Perplexity API")

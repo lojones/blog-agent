@@ -3,7 +3,7 @@ from agent.agent_captain import AgentCaptain
 from utils.logger import setup_logger
 
 app = Flask(__name__)
-logger = setup_logger("BlogAgent")
+logger = setup_logger("BlogAgent App")
 
 try:
     captain = AgentCaptain()

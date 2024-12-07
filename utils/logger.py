@@ -31,5 +31,16 @@ def setup_logger(name):
     # Add handlers to logger
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
+
+    def log_to_file(content: str, filename: str) -> None:
+        """Write content to a specific file in the logs directory."""
+        if not os.path.exists('logs'):
+            os.makedirs('logs')
+        filepath = os.path.join('logs', filename)
+        with open(filepath, 'a', encoding='utf-8') as f:
+            f.write(content + '\n')
+    
+    # Attach the method to the logger object
+    logger.log_to_file = log_to_file
     
     return logger 
