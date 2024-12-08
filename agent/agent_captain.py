@@ -18,10 +18,10 @@ from typing_extensions import TypedDict
 import json
 # from agent.tool_blogger import BlogPostInput
 from agent.data_class.blog_data import BlogAgentState
+from typing import Literal
+from langgraph.prebuilt import tools_condition
 
 load_dotenv()
-
- 
 
 class AgentCaptain:
     def __init__(self):
@@ -63,7 +63,7 @@ class AgentCaptain:
             self.logger.error(f"Failed to initialize LLM components: {str(e)}")
             raise
 
-    def evaluate_revised_blogpost(self, state: BlogAgentState):
+    def evaluate_revised_blogpost(self, state: BlogAgentState) -> Literal["revise_blogpost", "__end__"]:
         last_response = state["last_response"]
         if "DONE" in last_response:
             return END
@@ -75,13 +75,22 @@ class AgentCaptain:
         return state
     
     def revise_blogpost_intro(self, state: BlogAgentState):
-        pass
+        self.logger.info("Revising blogpost intro")
+        blogpost_with_revised_intro = self.blogger.revise_intro(state)
+        state["blog_post"] = blogpost_with_revised_intro
+        return state
     
     def revise_blogpost_body(self, state: BlogAgentState):
-        pass
+        self.logger.info("Revising blogpost body")
+        blogpost_with_revised_body = self.blogger.revise_body(state)
+        state["blog_post"] = blogpost_with_revised_body
+        return state
     
     def revise_blogpost_conclusion(self, state: BlogAgentState):
-        pass
+        self.logger.info("Revising blogpost conclusion")
+        blogpost_with_revised_conclusion = self.blogger.revise_conclusion(state)
+        state["blog_post"] = blogpost_with_revised_conclusion
+        return state
     
     def initial_outline(self, state: BlogAgentState):
         initial_topic = state["initial_topic"]
@@ -195,11 +204,11 @@ class AgentCaptain:
             self.logger.error(f"Failed to display graph: {str(e)}")
             raise
 
-    def create_blogpost(self, topic: str):
+    def create_blogpost(self, instructions: str):
         try:
             # Wrap messages in a dictionary
             input_data: BlogAgentState = {
-                "initial_topic": topic,
+                "instructions": instructions,
             }
             
             self.logger.info(f"Start Graph with Input data: {input_data}")

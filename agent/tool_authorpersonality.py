@@ -5,6 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from utils.github_reader import GithubReader
 
 logger = setup_logger("PersonalityTool")
 
@@ -17,12 +18,13 @@ class PersonalityTool:
     
     def __init__(self):
         self.logger = logger
-        self.personality = os.getenv('PERSONALITY')
+        self.github_reader = GithubReader()
+        self.personality = self.github_reader.read_file('https://github.com/lojones/lojo-personality/blob/main/blog-post-author.md')
+        
         if not self.personality:
-            self.logger.error("PERSONALITY environment variable not set")
-            raise ValueError("PERSONALITY environment variable must be set")
+            self.logger.error("Couldnt get the personality profile from GitHub")
+            raise ValueError("Couldnt get the personality profile from GitHub")
         self.logger.info(f"Initialized with personality profile: {self.personality[:50]}...")
-        # self.llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
         self.llm_anthropic = ChatAnthropic(model="claude-3-5-sonnet-20240620", 
                                     temperature=0.7,
                                     max_tokens=8000)

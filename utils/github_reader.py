@@ -45,7 +45,7 @@ class GithubReader:
     
     def read_file(self, url: str) -> Optional[str]:
         """
-        Fetches and returns the content of a file from GitHub.
+        Fetches and returns the content of a file from GitHub using the API.
         
         Args:
             url (str): GitHub URL to the file
@@ -53,20 +53,17 @@ class GithubReader:
             
         Returns:
             Optional[str]: File content if successful, None if failed
-            
-        Example:
-            reader = GithubReader()
-            content = reader.get_file_content(
-                "https://github.com/owner/repo/blob/main/README.md"
-            )
         """
         try:
-           
+            owner, repo, path = self.extract_repo_info(url)
+            
+            # Remove 'blob/main' or 'blob/master' from path
+            path = path.replace('blob/main/', '').replace('blob/master/', '')
             
             # Construct API URL
-            api_url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
+            api_url = f"{self.base_api_url}/{owner}/{repo}/contents/{path}"
             
-            self.logger.info(f"Fetching content from GitHub: {api_url}")
+            self.logger.info(f"Fetching content from GitHub API: {api_url}")
             response = requests.get(api_url, headers=self.get_headers())
             
             if response.status_code != 200:
@@ -74,7 +71,13 @@ class GithubReader:
                 return None
                 
             # GitHub API returns content as base64
-            return response.text
+            content = response.json().get('content', '')
+            if content:
+                decoded_content = base64.b64decode(content).decode('utf-8')
+                self.logger.info("Successfully fetched GitHub content")
+                return decoded_content
+            
+            return None
             
         except Exception as e:
             self.logger.error(f"Error fetching GitHub content: {str(e)}")

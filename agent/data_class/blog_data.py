@@ -8,6 +8,7 @@ class ResearchResponse(TypedDict):
     
 class BlogAgentState(TypedDict):
     last_response: str
+    instructions: str
     initial_topic: str
     revised_topic: str
     blog_outline: str

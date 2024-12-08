@@ -4,6 +4,7 @@ from typing_extensions import TypedDict
 from utils.logger import setup_logger
 from langchain_community.chat_models import ChatPerplexity
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from utils.envvars import PPLX_API_KEY
 
 logger = setup_logger("PerplexityTool")
 
@@ -17,7 +18,7 @@ class PerplexityTool:
     def __init__(self):
         self.logger = logger
         self.logger.info("Initializing PerplexityTool")
-        self.pplx_chat = ChatPerplexity()
+        self.pplx_chat = ChatPerplexity(api_key=PPLX_API_KEY)
     
     def query(self, initial_topic: str, blog_outline: str) -> Dict:
         """

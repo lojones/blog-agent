@@ -6,6 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from utils.github_reader import GithubReader
 from enum import Enum
 from agent.data_class.blog_data import BlogAgentState
+from utils.envvars import LLM_CLAUDE_SONNET
 
 logger = setup_logger("BloggerTool")
 
@@ -25,11 +26,10 @@ class BloggerTool:
         ArticlePart.FULL_ARTICLE: 'https://github.com/lojones/blog-agent-data/blob/main/create-blog-post.md'
     }
 
-
     def __init__(self):
         self.logger = logger
         # self.llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
-        self.llm_anthropic = ChatAnthropic(model="claude-3-5-sonnet-20240620", 
+        self.llm_anthropic = ChatAnthropic(model=LLM_CLAUDE_SONNET, 
                                            temperature=0.7,
                                            max_tokens=8000)
         self.github_reader = GithubReader()
@@ -105,6 +105,18 @@ class BloggerTool:
         except Exception as e:
             self.logger.error(f"Failed to create blog post: {str(e)}")
             raise
+
+    def revise_intro(self, input_data: BlogAgentState) -> str:
+        self.logger.info("Revising article introduction")
+        return self.revise(self.ArticlePart.INTRO, input_data)
+        
+    def revise_body(self, input_data: BlogAgentState) -> str:
+        self.logger.info("Revising article body")
+        return self.revise(self.ArticlePart.BODY, input_data)
+    
+    def revise_conclusion(self, input_data: BlogAgentState) -> str:
+        self.logger.info("Revising article conclusion")
+        return self.revise(self.ArticlePart.CONCLUSION, input_data)
 
     def revise(self, article_part: ArticlePart, input_data: BlogAgentState) -> str:
 
