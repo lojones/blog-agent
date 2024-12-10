@@ -1,15 +1,17 @@
 from flask import Flask, request, jsonify
-from agent.agent_captain import AgentCaptain
+# from agent.agent_captain import AgentCaptain
+from agent.supervisor import Supervisor
 from utils.logger import setup_logger
 
 app = Flask(__name__)
 logger = setup_logger("BlogAgent App")
 
 try:
-    captain = AgentCaptain()
-    logger.info("Successfully initialized AgentCaptain")
+    # captain = AgentCaptain()
+    supervisor = Supervisor()
+    logger.info("Successfully initialized Supervisor")
 except Exception as e:
-    logger.error(f"Failed to initialize AgentCaptain: {str(e)}")
+    logger.error(f"Failed to initialize Supervisor: {str(e)}")
 
 @app.route('/')
 def hello_world():
@@ -21,7 +23,8 @@ def hello_world():
 def show_graph():
     logger.info("Received request to /showgraph")
     try:
-        return captain.showgraph()
+        # return captain.showgraph()
+        return supervisor.showgraph()
         
     except Exception as e:
         logger.error(f"Failed to show graph: {str(e)}")
@@ -38,8 +41,9 @@ def create_blogpost():
             logger.warning("No topic provided in request")
             return jsonify({"error": "Topic is required"}), 400
             
-        result = captain.create_blogpost(topic)
-        return jsonify({"result": result})
+        # result = captain.create_blogpost(topic)
+        result = supervisor.create_blogpost(topic)
+        return jsonify({"result": result.model_dump()})
         
     except Exception as e:
         logger.error(f"Failed to create blog post: {str(e)}")

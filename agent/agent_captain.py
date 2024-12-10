@@ -1,4 +1,3 @@
-import os, getpass
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
@@ -20,7 +19,7 @@ import json
 from agent.data_class.blog_data import BlogAgentState
 from typing import Literal
 from langgraph.prebuilt import tools_condition
-
+from agent.tool_planner import PlannerTool
 load_dotenv()
 
 class AgentCaptain:
@@ -30,6 +29,7 @@ class AgentCaptain:
         self.logger.info("Initializing AgentCaptain")
         
         try:
+            self.planner = PlannerTool()
             self.personality = PersonalityTool()
             self.perplexity = PerplexityTool()
             self.website_content = WebsiteContentTool()
@@ -45,18 +45,19 @@ class AgentCaptain:
             self.builder.add_node("revise_blogpost_body", self.revise_blogpost_body)
             self.builder.add_node("revise_blogpost_conclusion", self.revise_blogpost_conclusion)
             self.builder.add_node("revise_blogpost", self.revise_blogpost)
-            self.builder.add_edge(START, "initial_outline")
-            self.builder.add_edge("initial_outline", "research_background")
-            self.builder.add_edge("research_background", "author_personality")
-            self.builder.add_edge("author_personality", "unwrap_research_websites")
-            self.builder.add_edge("unwrap_research_websites", "write_blogpost")
-            self.builder.add_edge("write_blogpost", "revise_blogpost")
-            self.builder.add_edge("revise_blogpost", "revise_blogpost_intro")
-            self.builder.add_edge("revise_blogpost", "revise_blogpost_body")
-            self.builder.add_edge("revise_blogpost", "revise_blogpost_conclusion")
-            self.builder.add_conditional_edges("revise_blogpost_intro", self.evaluate_revised_blogpost)
-            self.builder.add_conditional_edges("revise_blogpost_body", self.evaluate_revised_blogpost)
-            self.builder.add_conditional_edges("revise_blogpost_conclusion", self.evaluate_revised_blogpost)
+            # self.builder.add_edge(START, "initial_outline")
+            # self.builder.add_edge("initial_outline", "research_background")
+            # self.builder.add_edge("research_background", "author_personality")
+            # self.builder.add_edge("author_personality", "unwrap_research_websites")
+            # self.builder.add_edge("unwrap_research_websites", "write_blogpost")
+            # self.builder.add_edge("write_blogpost", "revise_blogpost")
+            # self.builder.add_edge("revise_blogpost", "revise_blogpost_intro")
+            # self.builder.add_edge("revise_blogpost", "revise_blogpost_body")
+            # self.builder.add_edge("revise_blogpost", "revise_blogpost_conclusion")
+            # self.builder.add_conditional_edges("revise_blogpost_intro", self.evaluate_revised_blogpost)
+            # self.builder.add_conditional_edges("revise_blogpost_body", self.evaluate_revised_blogpost)
+            # self.builder.add_conditional_edges("revise_blogpost_conclusion", self.evaluate_revised_blogpost)
+
             self.graph = self.builder.compile()
             self.logger.info("Successfully initialized LLM and graph")
         except Exception as e:
