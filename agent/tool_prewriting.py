@@ -6,6 +6,7 @@ from utils.github_reader import GithubReader
 from utils.envvars import LLM_CLAUDE_SONNET
 from utils.envvars import ANTHROPIC_API_KEY
 from agent.data_class.blog_data import ArticleFraming
+from langchain_core.tools import tool
 
 logger = setup_logger("PrewritingTool")
 
@@ -31,8 +32,8 @@ class PrewritingTool:
             raise ValueError("Failed to load prewriting system prompt")
   
             
-
-    def derive_content_plan(self, instructions: str) -> ArticleFraming:
+    @tool
+    def derive_prewriting(self, instructions: str) -> ArticleFraming:
         """
         Analyzes instructions to determine topic, title, and outline.
        
@@ -47,7 +48,7 @@ class PrewritingTool:
                 
         Example:
             tool = PrewritingTool()
-            plan = tool.derive_content_plan(
+            plan = tool.derive_prewriting(
                 "Write about AI safety, focusing on current challenges"
             )
         """
@@ -55,22 +56,10 @@ class PrewritingTool:
             self.logger.info("Deriving content plan from instructions")
            
             prompt = f"""
-            Please analyze these instructions and create a content plan:
+            Please analyze these instructions and create prewriting artifacts:
             INSTRUCTIONS:
             {instructions}
 
-            Create a plan that includes:
-            1. The main topic
-            2. An engaging title
-            3. A detailed outline following this structure:
-                - TITLE: <title>
-                - OBJECTIVE: <informing|persuading|entertaining>
-                - THESIS: <main point>
-                - KEY POINTS: (bullet points)
-                - STRUCTURE:
-                    INTRO: <intro point>
-                    BODY: <4 body points>
-                    CONCLUSION: <conclusion point>
             """
            
             messages = [
@@ -80,31 +69,12 @@ class PrewritingTool:
             
             response = self.llm.invoke(messages)
            
-            if isinstance(response, AIMessage):
-                # Parse the response into components
-                content = response.content
                
-                # Extract topic, title, and outline
-                # (Assuming the LLM returns them in a structured format)
-                lines = content.split('\n')
-                topic = next(line for line in lines if line.startswith('TOPIC:')).replace('TOPIC:', '').strip()
-                title = next(line for line in lines if line.startswith('TITLE:')).replace('TITLE:', '').strip()
-                outline = '\n'.join(lines[lines.index('OUTLINE:'):]) if 'OUTLINE:' in lines else content
+            self.logger.info(f"Successfully created content plan for: {instructions}")
+            return response
                
-                result = ArticleFraming(
-                    topic=topic,
-                    title=title,
-                    outline=outline
-                )
-               
-                self.logger.info(f"Successfully created content plan for: {topic}")
-                return result
-               
-            else:
-
-                raise ValueError(f"Unexpected response type: {type(response)}")
+            
                 
-
         except Exception as e:
 
             self.logger.error(f"Failed to derive content plan: {str(e)}")

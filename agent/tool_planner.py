@@ -56,6 +56,8 @@ class PlannerTool:
                 SystemMessage(content=self.create_plan_prompt),
                 HumanMessage(content=prompt)
             ]
+
+            self.logger.info(f"Creating execution plan for: {instructions}")
             
             response = self.llm.invoke(messages)
             

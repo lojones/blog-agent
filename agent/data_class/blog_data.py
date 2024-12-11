@@ -36,20 +36,6 @@ class Act(BaseModel):
         description="Action to perform. If you need to further use tools to get the answer, use Plan."
     )
 
-
-class BAState(BaseModel):
-    messages: List[AnyMessage] = Field(
-        default=[],
-        description="The conversation with the LLM"
-    ) 
-    plan: Plan  = Field(
-        default=None,
-        description="Plan to follow to achieve the goal"
-    ) 
-    instructions: str = Field(
-        description="The users original instructions for the what to write in the blog post and how to write it"
-    )
-
 class ExecutionStep(BaseModel):
     step: int = Field(description="The step number, starting at 1")
     description: str = Field(description="The description of what needs to be done in the step")
@@ -65,3 +51,17 @@ class ArticleFraming(TypedDict):
     topic: str
     title: str
     outline: str
+
+class BAState(BaseModel):
+    messages: List[AnyMessage] = Field(
+        default=[],
+        description="The conversation with the LLM"
+    ) 
+    plan: ExecutionPlan  = Field(
+        default=None,
+        description="Plan to follow to achieve the goal"
+    ) 
+    instructions: str = Field(
+        description="The users original instructions for the what to write in the blog post and how to write it"
+    )
+
