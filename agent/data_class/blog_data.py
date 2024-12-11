@@ -51,12 +51,17 @@ class BAState(BaseModel):
     )
 
 class ExecutionStep(BaseModel):
-    step: str
-    description: str
-    dependencies: List[str]
-    status: str  # 'pending', 'in_progress', 'completed', 'failed'
+    step: int = Field(description="The step number, starting at 1")
+    description: str = Field(description="The description of what needs to be done in the step")
+    dependencies: List[str] = Field(description="The dependencies (what needs to be done before this step) of the step")
+    status: str = Field( default="pending", description="any of these statuses represent the status of the step: pending, in_progress, completed, failed") 
 
 class ExecutionPlan(BaseModel):
-    steps: List[ExecutionStep]
-    current_step: int
-    notes: str
+    steps: List[ExecutionStep] = Field(description="The steps to follow to achieve the goal, in sorted order")
+    current_step: int = Field(default=1, description="The current step number thats next in line to execute")
+    notes: str = Field(default="", description="Any notes about the plan")
+
+class ArticleFraming(TypedDict):
+    topic: str
+    title: str
+    outline: str

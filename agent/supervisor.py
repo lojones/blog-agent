@@ -22,7 +22,6 @@ class Supervisor:
         graph = builder.compile()
         return graph
 
-
     def create_plan(self, state: BAState):
         self.logger.info("Creating plan")
         plan : ExecutionPlan = self.planner.create_execution_plan(state.instructions)
