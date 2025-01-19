@@ -6,7 +6,7 @@ from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from utils.github_reader import GithubReader
-
+from agent.data_class.blog_data import BlogState
 logger = setup_logger("PersonalityTool")
 
 # Get the parent directory of the current file's directory
@@ -28,6 +28,10 @@ class PersonalityTool:
         self.llm_anthropic = ChatAnthropic(model="claude-3-5-sonnet-20240620", 
                                     temperature=0.7,
                                     max_tokens=8000)
+        
+    def get_author_personality(self) -> str:
+        self.logger.info("PersonalityTool: Getting author's personality")
+        return self.personality
 
     def personalize(self, initial_topic: str,blog_outline: str,  background_research: str) -> str:
         """

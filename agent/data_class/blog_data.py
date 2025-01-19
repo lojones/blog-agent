@@ -65,3 +65,32 @@ class BAState(BaseModel):
         description="The users original instructions for the what to write in the blog post and how to write it"
     )
 
+class BlogOutlineSimple(BaseModel):
+    short_title: str = Field(default="", description="A short and splashy title that will be catchy and attention grabbing for the blog post")
+    title: str = Field(default="", description="The full form title of the blog post, this should be a bit longer than the short title and include a subtitle")
+    intro: str = Field(default="", description="Point form notes of the intro paragraphs")
+    body: str = Field(default="", description="Point form notes of the body paragraphs")
+    conclusion: str = Field(default="", description="Point form notes of the conclusion paragraphs")
+
+class BlogOutlineEvaluation(BaseModel):
+    evaluation: str = Field(default="", description="Detailed evaluation on how to improve the outline of the blog post or article")
+    good_to_go: bool = Field(default=True, description="Whether the outline is good to go (true) or needs more work (false)")
+    iteration_number: int = Field(default=0, description="The iteration number of the outline, starting at 0")
+
+class BlogOutline(BaseModel):
+    thesis: str = Field(default="", description="The thesis of the blog post")
+    research: ResearchResponse = Field(default=None,description="The research response from Perplexity AI")
+    outline: BlogOutlineSimple = Field(default=BlogOutlineSimple().model_construct(), description="The core outline points of the blog post")
+    outline_evaluation: BlogOutlineEvaluation = Field(default=BlogOutlineEvaluation().model_construct(), description="Notes about how interesting this outline is and notes on improving it (if needed)")
+
+
+class BlogState(BaseModel):
+    article_idea: str = Field(default="", description="The users original instructions for the what to write in the blog post and how to write it")
+    outline: BlogOutline = Field(default=BlogOutline().model_construct(), description="The outline points of the blog post")
+    author_personality: str = Field(default="", description="A description of the author's personality and writing style")
+
+
+class ResearchResponse(BaseModel):
+    content: str = Field(default="", description="The content of the research response")
+    sources: List[str] = Field(default=[], description="The sources of the research response")
+

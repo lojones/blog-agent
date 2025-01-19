@@ -9,7 +9,7 @@ def setup_logger(name):
     
     # Create logger
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     
     # Create formatters
     formatter = logging.Formatter(
@@ -20,7 +20,7 @@ def setup_logger(name):
     file_handler = logging.FileHandler(
         f'logs/{datetime.now().strftime("%Y-%m-%d")}.log'
     )
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
     
     # Console handler (logs INFO and above to console)

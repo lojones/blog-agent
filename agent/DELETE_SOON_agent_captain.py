@@ -1,3 +1,5 @@
+# THIS FILE IS DEPRECATED AND WILL BE REMOVED SOON
+# IT IS REPLACED BY THE SUPERVISOR 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
@@ -8,10 +10,10 @@ from utils.logger import setup_logger
 from flask import send_file
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 import io
-from agent.tool_perplexity import PerplexityTool, ResearchResponse
-from agent.tool_authorpersonality import PersonalityTool
+from agent.tool.perplexity import PerplexityTool, ResearchResponse
+from agent.tool.authorpersonality import PersonalityTool
 from agent.tool_websitecontent import WebsiteContentTool
-from agent.tool_blogger import BloggerTool
+from agent.tool.writer import WriterTool
 from typing import Dict
 from typing_extensions import TypedDict
 import json
@@ -33,7 +35,7 @@ class AgentCaptain:
             self.personality = PersonalityTool()
             self.perplexity = PerplexityTool()
             self.website_content = WebsiteContentTool()
-            self.blogger = BloggerTool()
+            self.blogger = WriterTool()
             self.llm = ChatOpenAI(model="gpt-4o")
             self.builder = StateGraph(BlogAgentState)
             self.builder.add_node("initial_outline", self.initial_outline)

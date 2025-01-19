@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from agent.data_class.blog_data import BAState
 from agent.supervisor import Supervisor
 from utils.logger import setup_logger
+from agent.tool.evaluator import Evaluator
 
 app = Flask(__name__)
 logger = setup_logger("BlogAgent App")
@@ -60,7 +61,15 @@ def create_blogpost():
     except Exception as e:
         logger.error(f"Failed to create blog post: {str(e)}")
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/test_google_gemini')
+def test_google_gemini():
+    logger.info("Received request to /test_google_gemini")
+    evaluator = Evaluator()
+    evaluator.test_google_gemini()
+    return "Google Gemini test completed"
+
 
 if __name__ == '__main__':
     logger.info("Starting BlogAgent application")
-    app.run(debug=True)
+    app.run(debug=False)
