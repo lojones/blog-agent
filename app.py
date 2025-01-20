@@ -1,6 +1,4 @@
 from flask import Flask, request, jsonify
-# from agent.agent_captain import AgentCaptain
-# from agent.data_class.blog_data import BAState
 from agent.supervisor import Supervisor
 from utils.logger import setup_logger
 from agent.tool.evaluator import Evaluator
@@ -31,17 +29,6 @@ def show_graph():
     except Exception as e:
         logger.error(f"Failed to show graph: {str(e)}")
         return f"Error displaying graph: {str(e)}", 500
-
-# @app.route('/showplan')
-# def show_plan():
-#     logger.info("Received request to /showplan")
-#     try:
-#         state = BAState(instructions="Write a blog post about the benefits of using AI to write blog posts")
-#         return supervisor.create_plan(state).plan.model_dump()
-#     except Exception as e:
-#         logger.error(f"Failed to show plan: {str(e)}")
-#         return f"Error displaying plan: {str(e)}", 500
-
 
 @app.route('/create/blogpost', methods=['POST'])
 def create_blogpost():

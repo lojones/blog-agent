@@ -32,7 +32,7 @@ class Supervisor:
         input_data = BlogState.model_construct()
         input_data.article_idea = instructions  
         state = self.graph.invoke(input_data)
-        return state['plan']
+        return state
     
     def showgraph(self):
         try:

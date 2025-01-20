@@ -98,6 +98,7 @@ class BlogArticleEvaluation(BaseModel):
 
 class BlogArticle(BaseModel):
     article_text: str = Field(default="", description="The raw text of the article or blog post")
+    article_text_history: List[str] = Field(default=[], description="The history of the article text, starting with the original article text and ending with the final article text")
     revised_intro_text: str = Field(default="", description="The revised text of the intro paragraph")
     revised_body_text: str = Field(default="", description="The revised text of the body paragraphs")
     revised_conclusion_text: str = Field(default="", description="The revised text of the conclusion paragraph")
