@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, List
 from utils.logger import setup_logger
 import requests
 from bs4 import BeautifulSoup
@@ -39,9 +39,21 @@ class WebsiteContentTool:
             markdown = self.html2text.handle(str(soup))
             markdown = f"--- START OF CONTENT FROM {url} ---\n\n" + markdown + "\n\n--- END OF CONTENT FROM {url} ---\n\n"
             
-            self.logger.info(f"Successfully converted content from {url}")
+            self.logger.info(f"Successfully got content from {url}")
             return markdown
             
         except Exception as e:
             self.logger.error(f"Failed to fetch/convert content: {str(e)}")
             return f"--- CONTENT FROM {url} NOT AVAILABLE (Error: {str(e)}) ---\n\n"
+
+    def get_content_from_urls(self, urls: List[str]) -> str:
+        """
+        Fetches content from multiple websites and concatenates them into a single string
+        """
+        content = ""
+        self.logger.info(f"WebsiteContentTool: Fetching content from {len(urls)} websites")
+        for url in urls:
+            self.logger.info(f"WebsiteContentTool: Fetching content from: {url}")
+            content += self.get_content(url)
+        self.logger.info(f"WebsiteContentTool: Content from {len(urls)} websites fetched")
+        return content

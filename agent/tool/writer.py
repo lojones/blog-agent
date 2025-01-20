@@ -38,7 +38,7 @@ class WriterTool:
         self.llm_anthropic = ChatAnthropic(model=LLM_CLAUDE_SONNET, 
                                            temperature=0.7,
                                            max_tokens=8000)
-        self.llm_anthropic_structured_outline = self.llm_anthropic.with_structured_output(BlogOutlineSimple)
+        self.llm_anthropic_structured_outline = self.llm_anthropic.with_structured_output(BlogOutlineSimple, include_raw=True)
         self.github_reader = GithubReader()
         self.logger.info("Initializing BloggerTool - getting system prompts from GitHub")
 
@@ -71,6 +71,7 @@ class WriterTool:
             response = self.llm_anthropic.invoke(messages)
             
             if isinstance(response, AIMessage):
+                self.logger.info(f"Usage metadata: {response.usage_metadata}")
                 self.logger.info("Successfully constructed thesis")
                 self.logger.debug(f"Blog post: {response.content}")
                 return response.content
@@ -115,142 +116,129 @@ class WriterTool:
                 HumanMessage(content=prompt)
             ]
             response = self.llm_anthropic_structured_outline.invoke(messages)
-            if isinstance(response, BlogOutlineSimple):
+            if isinstance(response['parsed'], BlogOutlineSimple):
                 self.logger.info("Successfully created outline")
-                self.logger.debug(f"Outline: {response}")
-                return response
+                self.logger.info(f"Usage metadata: {response['raw'].usage_metadata}")
+                self.logger.debug(f"Outline: {response['parsed']}")
+                return response['parsed']
             else:
-                raise ValueError(f"Unexpected response type: {type(response)}")
+                raise ValueError(f"Unexpected response type: {type(response['parsed'])}")
         except Exception as e:
             self.logger.error(f"Failed to create outline: {str(e)}")
             raise
         
 
-    # def create_blog_post(self, input_data: BlogAgentState) -> str:
-    #     """
-    #     Creates a blog post using the provided information.
+    def create_blog_post(self, state: BlogState) -> str:
+
+        try:
+            self.logger.info(f"Writing blog post")
+            system_prompt = self.system_prompts[self.ArticlePart.FULL_ARTICLE]
+            
+            prompt = f"""
+            Write a blog post following these specific instructions:
+
+            SHORT TITLE:
+            {state.outline.outline.short_title}
+
+            LONG TITLE:
+            {state.outline.outline.title}
+
+            INTRO:
+            {state.outline.outline.intro}
+
+            BODY:
+            {state.outline.outline.body}
+
+            CONCLUSION:
+            {state.outline.outline.conclusion}
+
+            WRITE IN THIS STYLE AND VOICE:
+            {state.author_personality}
+
+            INCORPORATE THIS BACKGROUND RESEARCH:
+            {state.outline.research.content}
+
+            IMPORTANT GUIDELINES:
+            1. Follow the outline structure exactly
+            2. Maintain the specified author's voice and style throughout
+            3. Incorporate research naturally, not just copying
+            4. Include relevant citations when using specific information
+            5. Keep the tone consistent with the blog's objective
+            6. Make it engaging and readable
+            """
+            
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt)
+            ]
+            
+            response = self.llm_anthropic.invoke(messages)
+            
+            if isinstance(response, AIMessage):
+                self.logger.info("Successfully generated blog post")
+                self.logger.info(f"Usage metadata: {response.usage_metadata}")
+                self.logger.debug(f"Blog post: {response.content}")
+                return response.content
+            else:
+                raise ValueError(f"Unexpected response type: {type(response)}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create blog post: {str(e)}")
+            raise
+
+    def revise_intro(self, state: BlogState) -> str:
+        self.logger.info("Revising article introduction")
+        return self.revise(self.ArticlePart.INTRO, state)
         
-    #     Args:
-    #         input_data: BlogPostInput containing:
-    #             - revised_topic: Main topic of the blog post
-    #             - revised_outline: Structured outline of the post
-    #             - author_personality_notes: Notes about author's style and personality
-    #             - background_research_summary: Summary of research findings
-    #             - background_research_content: Full content from research sources
-            
-    #     Returns:
-    #         str: Generated blog post content
-    #     """
-    #     try:
-    #         self.logger.info(f"Writing blog post for topic: {input_data['topic']}")
-    #         system_prompt = self.system_prompt_full_article
-            
-    #         prompt = f"""
-    #         Write a blog post following these specific instructions:
-
-    #         TOPIC:
-    #         {input_data['revised_topic']}
-
-    #         OUTLINE TO FOLLOW:
-    #         {input_data['revised_outline']}
-
-    #         WRITE IN THIS STYLE AND VOICE:
-    #         {input_data['author_personality_notes']}
-
-    #         INCORPORATE THIS RESEARCH SUMMARY:
-    #         {input_data['background_research_summary']['content']}
-
-    #         DETAILED RESEARCH CONTENT:
-    #         {input_data['background_research_content']}
-
-    #         IMPORTANT GUIDELINES:
-    #         1. Follow the outline structure exactly
-    #         2. Maintain the specified author's voice and style throughout
-    #         3. Incorporate research naturally, not just copying
-    #         4. Include relevant citations when using specific information
-    #         5. Keep the tone consistent with the blog's objective
-    #         6. Make it engaging and readable
-    #         """
-            
-    #         messages = [
-    #             SystemMessage(content=system_prompt),
-    #             HumanMessage(content=prompt)
-    #         ]
-            
-    #         response = self.llm_anthropic.invoke(messages)
-            
-    #         if isinstance(response, AIMessage):
-    #             self.logger.info("Successfully generated blog post")
-    #             self.logger.debug(f"Blog post: {response.content}")
-    #             return response.content
-    #         else:
-    #             raise ValueError(f"Unexpected response type: {type(response)}")
-            
-    #     except Exception as e:
-    #         self.logger.error(f"Failed to create blog post: {str(e)}")
-    #         raise
-
-    # def revise_intro(self, input_data: BlogAgentState) -> str:
-    #     self.logger.info("Revising article introduction")
-    #     return self.revise(self.ArticlePart.INTRO, input_data)
-        
-    # def revise_body(self, input_data: BlogAgentState) -> str:
-    #     self.logger.info("Revising article body")
-    #     return self.revise(self.ArticlePart.BODY, input_data)
+    def revise_body(self, state: BlogState) -> str:
+        self.logger.info("Revising article body")
+        return self.revise(self.ArticlePart.BODY, state)
     
-    # def revise_conclusion(self, input_data: BlogAgentState) -> str:
-    #     self.logger.info("Revising article conclusion")
-    #     return self.revise(self.ArticlePart.CONCLUSION, input_data)
+    def revise_conclusion(self, state: BlogState) -> str:
+        self.logger.info("Revising article conclusion")
+        return self.revise(self.ArticlePart.CONCLUSION, state)
 
-    # def revise(self, article_part: ArticlePart, input_data: BlogAgentState) -> str:
+    def revise(self, article_part: ArticlePart, state: BlogState) -> str:
 
-    #     try:
-    #         self.logger.info("Revising blog post")
-    #         system_prompt = self.system_prompts[article_part]
+        try:
+            self.logger.info("Revising blog post")
+            system_prompt = self.system_prompts[article_part]
             
-    #         if not system_prompt:
-    #             self.logger.error("Failed to fetch revision prompt from GitHub")
-    #             raise ValueError("Could not fetch revision prompt")
+            if not system_prompt:
+                self.logger.error("Failed to fetch revision prompt from GitHub")
+                raise ValueError("Could not fetch revision prompt")
             
-    #         prompt = f"""
-    #         Evaluate and/or revise the following article:
+            prompt = f"""
+            Evaluate and/or revise the {article_part} of the following article:
 
-    #         CURRENT ARTICLE START:
-    #         {input_data['blog_post']}
-    #         CURRENT ARTICLE END
+            CURRENT ARTICLE START:
+            {state.article.article_text}
+            CURRENT ARTICLE END
 
-    #         The following is additional information about the topic and the author's style and voice:
-    #         TOPIC:
-    #         {input_data['revised_topic']}
+            INCORPORATE THIS RESEARCH SUMMARY:
+            {state.outline.research.content}
+            
+            """
+            
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt)
+            ]
+            
+            response = self.llm_anthropic.invoke(messages)
+            
+            if isinstance(response, AIMessage):
+                self.logger.info("Successfully revised introduction")
+                self.logger.info(f"Usage metadata: {response.usage_metadata}")
+                self.logger.debug(f"Revised article: {response.content}")
 
-    #         WRITE IN THIS STYLE AND VOICE:
-    #         {input_data['author_personality_notes']}
-
-    #         INCORPORATE THIS RESEARCH SUMMARY:
-    #         {input_data['background_research_summary']['content']}
-
-    #         DETAILED RESEARCH CONTENT:
-    #         {input_data['background_research_content']}
+                return response.content
+            else:
+                raise ValueError(f"Unexpected response type: {type(response)}")
             
-    #         """
-            
-    #         messages = [
-    #             SystemMessage(content=system_prompt),
-    #             HumanMessage(content=prompt)
-    #         ]
-            
-    #         response = self.llm_anthropic.invoke(messages)
-            
-    #         if isinstance(response, AIMessage):
-    #             self.logger.info("Successfully revised introduction")
-    #             self.logger.debug(f"Revised article: {response.content}")
-    #             return response.content
-    #         else:
-    #             raise ValueError(f"Unexpected response type: {type(response)}")
-            
-    #     except Exception as e:
-    #         self.logger.error(f"Failed to revise introduction: {str(e)}")
-    #         raise
+        except Exception as e:
+            self.logger.error(f"Failed to revise introduction: {str(e)}")
+            raise
 
 
             

@@ -20,7 +20,7 @@ def setup_logger(name):
     file_handler = logging.FileHandler(
         f'logs/{datetime.now().strftime("%Y-%m-%d")}.log'
     )
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     
     # Console handler (logs INFO and above to console)

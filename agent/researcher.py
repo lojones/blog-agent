@@ -9,7 +9,8 @@ from langgraph.graph import StateGraph, START, END
 from rich import print
 from agent.tool.evaluator import Evaluator
 from typing import Literal
-
+from agent.tool.websitecontent import WebsiteContentTool
+from utils.utils import write_to_file
 load_dotenv()
 
 class Researcher:
@@ -21,6 +22,7 @@ class Researcher:
         self.perplexity = PerplexityTool()
         self.writer = WriterTool()
         self.evaluator = Evaluator()
+        self.websitecontent = WebsiteContentTool()
 
         self.builder = StateGraph(BlogState)
         self.builder.add_node("create_thesis", self.create_thesis)
@@ -47,6 +49,7 @@ class Researcher:
         self.logger.info("Researcher: Creating thesis")
         instructions = state.article_idea
         thesis = self.writer.construct_thesis(instructions)
+        write_to_file(thesis, "thesis", self.logger)
         state.outline.thesis = thesis
         self.logger.info(f"Researcher: Thesis created")
         return state
@@ -58,8 +61,20 @@ class Researcher:
         self.logger.info("Researcher: Researching thesis")
         thesis = state.outline.thesis
         research : ResearchResponse = self.perplexity.query(thesis)
+        write_to_file(research, "research_thesis", self.logger)
         state.outline.research = research
         self.logger.info("Researcher: Thesis researched")
+        return state
+    
+    def get_research_website_content(self, state: BlogState) -> BlogState:
+        """
+        Gets the content of the research websites
+        """
+        self.logger.info("Researcher: Getting research website content")
+        research_content = self.websitecontent.get_content_from_urls(state.outline.research.sources)
+        write_to_file(research_content, "research_content", self.logger)
+        state.outline.research.sources_content = research_content
+        self.logger.info("Researcher: Research website content retrieved")
         return state
     
     def get_author_personality(self, state: BlogState) -> BlogState:
@@ -68,6 +83,7 @@ class Researcher:
         """
         self.logger.info("Researcher: Getting author's personality")
         personality = self.personality.get_author_personality()
+        write_to_file(personality, "author_personality", self.logger)
         state.author_personality = personality
         self.logger.info("Researcher: Author's personality retrieved")
         return state
@@ -83,6 +99,7 @@ class Researcher:
             existing_outline = state.outline.outline.model_dump_json()
             outline_evaluation = state.outline.outline_evaluation.evaluation
         outline : BlogOutlineSimple = self.writer.create_outline(state.outline.thesis, state.outline.research.content, state.author_personality, existing_outline, outline_evaluation)
+        write_to_file(outline, "outline", self.logger)
         state.outline.outline = outline
         self.logger.info("Researcher: Outline created")
         return state
@@ -102,6 +119,7 @@ class Researcher:
         """
         self.logger.info("Researcher: evaluating the quality of the outline")
         outline : BlogOutline = self.evaluator.evaluate_outline(state.outline)
+        write_to_file(outline, "outline_evaluation", self.logger)
         state.outline = outline
         self.logger.info("Researcher: Outline evaluated")
         return state
@@ -112,7 +130,7 @@ class Researcher:
         Checks if the blog post is interesting
         """
         self.logger.info("Researcher: decide what to do based on the outline evaluation")
-        if state.outline.outline_evaluation.good_to_go and state.outline.outline_evaluation.iteration_number >= 3:
+        if state.outline.outline_evaluation.good_to_go or state.outline.outline_evaluation.iteration_number >= 3:
             return END
         else:
             return "create_outline"
